@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Polymer Star Rating Demo</title>
+
+    <!-- Import PolymerElement from CDN -->
+    <script type="module">
+      import {PolymerElement, html}
+        from 'https://unpkg.com/@polymer/polymer@3.5.0/polymer-element.js?module';
+
+      class StarButton extends PolymerElement {
+        static get is() { return 'star-button'; }
+
+        static get properties() {
+          return {
+            value: { type: Number, value: 0, notify: true, reflectToAttribute: true },
+            max:   { type: Number, value: 5 }
+          };
+        }
+
+        static get template() {
+          return html`
+            <style>
+              :host { display:inline-block; font-size:1.8rem; }
+              .star { cursor:pointer; color:#ccc; padding:0 .1rem; }
+              .star.filled { color:#f5b301; }
+            </style>
+            <div id="wrap"></div>
+          `;
+        }
+
+        ready() {
+          super.ready();
+          this.renderStars();
+        }
+
+        renderStars() {
+          const wrap = this.shadowRoot.getElementById('wrap');
+          if (!wrap) return;
+          wrap.innerHTML = '';
+          this.stars = [];
+
+          for (let i = 1; i <= this.max; i++) {
+            const span = document.createElement('span');
+            span.className = 'star' + (i <= this.value ? ' filled' : '');
+            span.textContent = '★';
+            span.dataset.index = String(i);
+            span.addEventListener('click', this.onClick.bind(this));
+            wrap.appendChild(span);
+            this.stars.push(span);
+          }
+        }
+
+        onClick(e) {
+          const idx = Number(e.currentTarget.dataset.index);
+          this.value = (this.value === idx) ? 0 : idx;
+          this.dispatchEvent(new CustomEvent('rating-changed', {
+            detail: { value: this.value },
+            bubbles: true,
+            composed: true
+          }));
+          this.updateStars();
+        }
+
+        updateStars() {
+          if (!this.stars) return;
+          for (let i = 0; i < this.stars.length; i++) {
+            const idx = i + 1;
+            const el = this.stars[i];
+            el.classList.toggle('filled', idx <= this.value);
+          }
+        }
+      }
+
+      customElements.define(StarButton.is, StarButton);
+    </script>
+  </head>
+
+  <body>
+    <h2>Polymer Star Rating Demo</h2>
+
+    <!-- Our custom element -->
+    <star-button id="rater" max="5" value="3"></star-button>
+
+    <p>Current rating: <span id="out">3</span></p>
+
+    <script>
+      const rater = document.getElementById('rater');
+      const out = document.getElementById('out');
+
+      rater.addEventListener('rating-changed', (e) => {
+        out.textContent = e.detail.value;
+      });
+    </script>
+  </body>
+</html>
